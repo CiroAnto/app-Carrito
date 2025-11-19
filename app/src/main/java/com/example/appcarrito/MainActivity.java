@@ -27,8 +27,8 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity {
     // 1. Variables de UI
     private EditText editTextExpeditionName;
-    private Button buttonSettings, buttonForward, buttonBackward, buttonLeft, buttonRight, buttonStop;
-    private ImageButton buttonCapturePhoto, buttonRecordVideo;
+    private Button buttonForward, buttonBackward, buttonLeft, buttonRight, buttonStop;
+    private ImageButton buttonCapturePhoto, buttonRecordVideo, buttonSettings;
     private SeekBar seekBarServo;
     private TextView textViewStatus;
     private SurfaceView videoSurfaceView;

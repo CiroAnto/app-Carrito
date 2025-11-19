@@ -20,7 +20,7 @@
         android:layout_gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
-        android:text="VIDEO AQUÍ (ESP32-CAM)" />
+        android:text="VIDEO :) (ESP32-CAM)" />
 
     <!-- 2. CAPA SUPERPUESTA: CONTROLES Y HUD (RelativeLayout) -->
     <RelativeLayout
@@ -45,16 +45,19 @@
             android:textSize="14sp"/>
 
         <!-- B. SUPERIOR DERECHA: Botón para Abrir Configuración de Conexión -->
-        <Button
+
+        <ImageButton
             android:id="@+id/buttonSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
-            android:text="⚙️ Conexión"
-            android:backgroundTint="#808080"
-            android:textSize="14sp"
-            android:padding="10dp"/>
+            android:layout_marginBottom="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Tomar Foto"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/link" />
 
         <!-- C. INFERIOR IZQUIERDA: Controles de Movimiento del Carrito -->
         <LinearLayout
