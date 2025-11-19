@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <SurfaceView
+        android:id="@+id/videoSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:background="#000000" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:text="STREAM DE VIDEO AQUÍ (ESP32-CAM)" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/editTextExpeditionName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:background="#A0000000"
+            android:textColor="#FFFFFF"
+            android:hint="Nombre Expedición (Foto/Video)"
+            android:textColorHint="#CCCCCC"
+            android:padding="8dp"
+            android:inputType="textCapSentences"
+            android:maxLength="20"
+            android:textSize="14sp"/>
+
+        <Button
+            android:id="@+id/buttonSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:text="⚙️ Conexión"
+            android:backgroundTint="#808080"
+            android:textSize="14sp"
+            android:padding="10dp"/>
+
+        <LinearLayout
+            android:id="@+id/layoutMovementControls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:background="#B0000000"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MOVIMIENTO" android:textColor="#FFFFFF" android:layout_gravity="center_horizontal" android:layout_marginBottom="4dp"/>
+
+            <Button android:id="@+id/buttonForward" android:text="⬆️" android:layout_width="55dp" android:layout_height="55dp" android:layout_gravity="center_horizontal" android:layout_margin="2dp" android:textSize="12sp"/>
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/buttonLeft" android:text="⬅️" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:textSize="12sp"/>
+                <Button android:id="@+id/buttonStop" android:text="🛑" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:backgroundTint="@android:color/holo_red_dark" android:textSize="12sp"/>
+                <Button android:id="@+id/buttonRight" android:text="➡️" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:textSize="12sp"/>
+            </LinearLayout>
+
+            <Button android:id="@+id/buttonBackward" android:text="⬇️" android:layout_width="55dp" android:layout_height="55dp" android:layout_gravity="center_horizontal" android:layout_margin="2dp" android:textSize="12sp"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="#B0000000"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONTROL CÁMARA"
+                android:textColor="#FFFFFF"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="4dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Servo Ángulo (0-180°)"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:layout_gravity="center_horizontal"/>
+            <SeekBar
+                android:id="@+id/seekBarServo"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:max="180"
+                android:progress="90"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="10dp"/>
+
+            <Button
+                android:id="@+id/buttonCapturePhoto"
+                android:layout_width="160dp"
+                android:layout_height="40dp"
+                android:text="📸 Tomar Foto"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp"/>
+
+            <Button
+                android:id="@+id/buttonRecordVideo"
+                android:layout_width="160dp"
+                android:layout_height="40dp"
+                android:text="📹 Grabar Video"
+                android:textSize="12sp"
+                android:backgroundTint="@android:color/holo_red_light"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:text="Estatus: Desconectado"
+            android:textColor="#FFFFFF"
+            android:background="#A0000000"
+            android:padding="4dp"
+            android:textSize="12sp"/>
+
+    </RelativeLayout>
+
+</FrameLayout>
