@@ -12,6 +12,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -27,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     // 1. Variables de UI
     private EditText editTextExpeditionName;
     private Button buttonSettings, buttonForward, buttonBackward, buttonLeft, buttonRight, buttonStop;
-    private Button buttonCapturePhoto, buttonRecordVideo;
+    private ImageButton buttonCapturePhoto, buttonRecordVideo;
     private SeekBar seekBarServo;
     private TextView textViewStatus;
     private SurfaceView videoSurfaceView;
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Controles de Cámara
         seekBarServo = findViewById(R.id.seekBarServo);
-        buttonCapturePhoto = findViewById(R.id.buttonCapturePhoto);
+        buttonCapturePhoto = findViewById(R.id.imageButtonCapturePhoto);
         buttonRecordVideo = findViewById(R.id.buttonRecordVideo);
 
         // Estatus y Video
