@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <!-- 1. CAPA DE FONDO: VISOR DE VIDEO (SurfaceView) -->
     <SurfaceView
         android:id="@+id/videoSurfaceView"
         android:layout_width="match_parent"
@@ -21,11 +22,13 @@
         android:textSize="20sp"
         android:text="STREAM DE VIDEO AQUÍ (ESP32-CAM)" />
 
+    <!-- 2. CAPA SUPERPUESTA: CONTROLES Y HUD (RelativeLayout) -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="16dp">
 
+        <!-- A. SUPERIOR IZQUIERDA: Nombre de la Expedición/Archivo -->
         <EditText
             android:id="@+id/editTextExpeditionName"
             android:layout_width="wrap_content"
@@ -41,6 +44,7 @@
             android:maxLength="20"
             android:textSize="14sp"/>
 
+        <!-- B. SUPERIOR DERECHA: Botón para Abrir Configuración de Conexión -->
         <Button
             android:id="@+id/buttonSettings"
             android:layout_width="wrap_content"
@@ -52,6 +56,7 @@
             android:textSize="14sp"
             android:padding="10dp"/>
 
+        <!-- C. INFERIOR IZQUIERDA: Controles de Movimiento del Carrito -->
         <LinearLayout
             android:id="@+id/layoutMovementControls"
             android:layout_width="wrap_content"
@@ -77,6 +82,7 @@
         </LinearLayout>
 
 
+        <!-- D. LADO DERECHO CENTRADO: Control de la Cámara y Captura -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -127,6 +133,7 @@
                 android:backgroundTint="@android:color/holo_red_light"/>
         </LinearLayout>
 
+        <!-- E. INFERIOR DERECHA: Estatus de Conexión -->
         <TextView
             android:id="@+id/textViewStatus"
             android:layout_width="wrap_content"

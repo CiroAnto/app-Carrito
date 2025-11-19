@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="IP y Puertos"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="10dp"/>
+
+    <EditText
+        android:id="@+id/inputIP"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Dirección IP (TCP/HTTP)"
+        android:inputType="textUri"
+        android:text="192.168.4.1"
+        android:minHeight="48dp" />
+
+    <EditText
+        android:id="@+id/inputPort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Puerto TCP (Movimiento/Servo)"
+        android:inputType="number"
+        android:text="8080"
+        android:minHeight="48dp" />
+
+    <EditText
+        android:id="@+id/inputHttpPort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Puerto HTTP (Cámara/Video - Generalmente 80)"
+        android:inputType="number"
+        android:text="80"
+        android:minHeight="48dp" />
+
+</LinearLayout>
