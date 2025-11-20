@@ -7,12 +7,10 @@
     tools:context=".MainActivity">
 
     <!-- 1. CAPA DE FONDO: VISOR DE VIDEO (SurfaceView) -->
-    <SurfaceView
-        android:id="@+id/videoSurfaceView"
+    <WebView
+        android:id="@+id/videoWebView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:background="#000000" />
+        android:layout_height="match_parent" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -70,17 +68,62 @@
             android:orientation="vertical"
             android:padding="10dp">
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MOVIMIENTO" android:textColor="#FFFFFF" android:layout_gravity="center_horizontal" android:layout_marginBottom="4dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="4dp"
+                android:text="MOVIMIENTO"
+                android:textColor="#FFFFFF" />
 
-            <Button android:id="@+id/buttonForward" android:text="⬆️" android:layout_width="55dp" android:layout_height="55dp" android:layout_gravity="center_horizontal" android:layout_margin="2dp" android:textSize="12sp"/>
+            <Button
+                android:id="@+id/buttonForward"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="2dp"
+                android:text="⬆️"
+                android:textSize="12sp" />
 
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
-                <Button android:id="@+id/buttonLeft" android:text="⬅️" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:textSize="12sp"/>
-                <Button android:id="@+id/buttonStop" android:text="🛑" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:backgroundTint="@android:color/holo_red_dark" android:textSize="12sp"/>
-                <Button android:id="@+id/buttonRight" android:text="➡️" android:layout_width="55dp" android:layout_height="55dp" android:layout_margin="2dp" android:textSize="12sp"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/buttonLeft"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_margin="2dp"
+                    android:text="⬅️"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/buttonStop"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_margin="2dp"
+                    android:backgroundTint="@android:color/holo_red_dark"
+                    android:text="🛑"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/buttonRight"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:layout_margin="2dp"
+                    android:text="➡️"
+                    android:textSize="12sp" />
             </LinearLayout>
 
-            <Button android:id="@+id/buttonBackward" android:text="⬇️" android:layout_width="55dp" android:layout_height="55dp" android:layout_gravity="center_horizontal" android:layout_margin="2dp" android:textSize="12sp"/>
+            <Button
+                android:id="@+id/buttonBackward"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="2dp"
+                android:text="⬇️"
+                android:textSize="12sp" />
 
         </LinearLayout>
         <!-- D. LADO DERECHO CENTRADO: Control de la Cámara y Captura -->

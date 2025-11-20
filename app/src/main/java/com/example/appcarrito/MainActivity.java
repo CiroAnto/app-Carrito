@@ -17,6 +17,12 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,11 +37,13 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton buttonCapturePhoto, buttonRecordVideo, buttonSettings;
     private SeekBar seekBarServo;
     private TextView textViewStatus;
-    private SurfaceView videoSurfaceView;
+    private WebView videoWebView;
 
     // 2. Variables de Red TCP/IP (Movimiento y Servo)
     private String serverIP = "192.168.4.1";
     private int serverPort = 8080;
+
+    private final OkHttpClient httpClient = new OkHttpClient();
 
     private Socket tcpSocket;
     private PrintWriter output;
@@ -81,7 +89,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Estatus y Video
         textViewStatus = findViewById(R.id.textViewStatus);
-        videoSurfaceView = findViewById(R.id.videoSurfaceView);
+        videoWebView = findViewById(R.id.videoWebView);
+        WebSettings webSettings = videoWebView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        videoWebView.setWebViewClient(new WebViewClient());
 
         // Establecer un mensaje inicial de nombre de expedición
         editTextExpeditionName.setText("Mision_01");
@@ -126,13 +137,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ==========================================================
     // LÓGICA DE CONEXIÓN Y COMUNICACIÓN TCP (Movimiento y Servo)
-    // ==========================================================
 
-    /**
-     * Muestra un diálogo para que el usuario ingrese la IP y los Puertos.
-     */
+     //Muestra un diálogo para que el usuario ingrese la IP y los Puertos.
     private void showConnectionDialog() {
         // Se usa el layout dialog_connection.xml
         final LayoutInflater inflater = getLayoutInflater();
@@ -173,19 +180,15 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    /**
-     * Inicia el intento de conexión TCP en un hilo de fondo.
-     */
+     //Inicia el intento de conexión TCP en un hilo de fondo.
     private void connectToServer() {
         updateStatus("Intentando conectar a: " + serverIP + ":" + serverPort + "...");
-
         executorService.execute(() -> {
             try {
                 // Cerrar conexión previa si existe
                 if (tcpSocket != null && !tcpSocket.isClosed()) {
                     tcpSocket.close();
                 }
-
                 // Intentar nueva conexión
                 tcpSocket = new Socket(serverIP, serverPort);
                 output = new PrintWriter(tcpSocket.getOutputStream());
@@ -194,6 +197,10 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     updateStatus("Conexión TCP exitosa.");
                     Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
+
+                    // carga video del ESP32
+                    String streamUrl = "http://" + serverIP + ":81/stream";
+                    videoWebView.loadUrl(streamUrl);
                 });
 
             } catch (IOException e) {
@@ -248,36 +255,25 @@ public class MainActivity extends AppCompatActivity {
 
         if (action.equals("photo")) {
             commandPath = "/capture?type=photo&name=" + filenameBase;
-            Toast.makeText(this, "Comando Foto enviado: " + filenameBase, Toast.LENGTH_SHORT).show();
         } else if (action.equals("video_toggle")) {
-            commandPath = "/record"; // Endpoint simple para iniciar/detener
-            Toast.makeText(this, "Comando Video enviado.", Toast.LENGTH_SHORT).show();
+            commandPath = "/record";
         }
 
-        final String fullUrl = "http://" + serverIP + ":" + httpPort + commandPath; // Usamos final
+        final String fullUrl = "http://" + serverIP + ":" + httpPort + commandPath;
 
-        if (!fullUrl.isEmpty()) {
-            // Ejecutar la petición HTTP en el Executor
-            // ATENCIÓN: Esta sección es una SIMULACIÓN. Para hacer peticiones HTTP reales
-            // en Android, debes usar una librería moderna como OkHttp.
-            executorService.execute(() -> {
-                try {
-                    // --- AQUÍ IRÍA EL CÓDIGO REAL DE LA LIBRERÍA HTTP ---
+        executorService.execute(() -> {
+            try {
+                Request request = new Request.Builder()
+                        .url(fullUrl)
+                        .build();
 
-                    // SIMULACIÓN
-                    Thread.sleep(100); // Pequeño retardo para simular la red
-                    Log.i("HTTP_CONTROL", "Petición GET simulada a: " + fullUrl);
-
-                    // --- FIN SIMULACIÓN ---
-
-                } catch (InterruptedException e) {
-                    // Manejar interrupción
-                    Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    Log.e("HTTP_CONTROL", "Error en petición HTTP simulada: " + e.getMessage());
+                try (Response response = httpClient.newCall(request).execute()) {
+                    Log.i("HTTP_CONTROL", "Respuesta: " + response.code());
                 }
-            });
-        }
+            } catch (Exception e) {
+                Log.e("HTTP_CONTROL", "Error en petición HTTP: " + e.getMessage());
+            }
+        });
     }
 
     // 4. Gestión del Ciclo de Vida
@@ -292,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 tcpSocket.close();
             } catch (IOException e) {
-                // Ignorar si ya está cerrado
+                // no hacer caso
             }
         }
         updateStatus("Recursos liberados.");
