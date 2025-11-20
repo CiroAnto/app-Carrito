@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         // Inicializar el Executor (siempre debe ser inicializado)
         executorService = Executors.newSingleThreadExecutor();
 
-        // Inicializar todos los componentes de la UI
+        // los componentes
         initUI();
 
         // Asignar Listeners a los botones y controles
@@ -98,25 +98,23 @@ public class MainActivity extends AppCompatActivity {
         editTextExpeditionName.setText("Mision_01");
     }
 
-    /**
-     * Configura los Listeners de eventos para los botones y SeekBar.
-     */
+     //Configura los Listeners de eventos para los botones y SeekBar.
     private void setupListeners() {
-        // --- Botón de Configuración de Conexión ---
+        //Botón de Configuración de Conexión
         buttonSettings.setOnClickListener(v -> showConnectionDialog());
 
-        // --- Controles de Movimiento (Comandos TCP/IP) ---
+        //Controles de Movimiento (Comandos TCP/IP)
         buttonForward.setOnClickListener(v -> sendCommand("F"));
         buttonBackward.setOnClickListener(v -> sendCommand("B"));
         buttonLeft.setOnClickListener(v -> sendCommand("L"));
         buttonRight.setOnClickListener(v -> sendCommand("R"));
         buttonStop.setOnClickListener(v -> sendCommand("S"));
 
-        // --- Controles de Cámara (Peticiones HTTP) ---
+        //Controles de Cámara (Peticiones HTTP)
         buttonCapturePhoto.setOnClickListener(v -> sendHttpCaptureCommand("photo"));
         buttonRecordVideo.setOnClickListener(v -> sendHttpCaptureCommand("video_toggle"));
 
-        // --- Control de Servo ---
+        //Control de servo camara
         seekBarServo.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -214,10 +212,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Envía un comando de texto al servidor TCP (ESP32).
-     * @param command El comando a enviar (ej. "F", "S", "A90").
-     */
+     //Envía un comando de texto al servidor TCP (ESP32), el comando a enviar (ej. "F", "S", "A90").
     private void sendCommand(final String command) {
         if (output != null) {
             executorService.execute(() -> {
@@ -235,20 +230,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Actualiza el TextView de estado en el hilo principal.
-     * @param message El mensaje de estado.
-     */
+     //Actualiza el TextView de estado en el hilo principal.El mensaje de estado.
     private void updateStatus(String message) {
         runOnUiThread(() -> textViewStatus.setText("Estatus: " + message));
     }
 
     // LÓGICA DE COMUNICACIÓN HTTP (Captura de Fotos/Video)
 
-    /**
-     * Envía una petición HTTP GET para comandos de la cámara (foto/video).
-     * @param action La acción deseada ("photo" o "video_toggle").
-     */
+    //Envía una petición HTTP GET para comandos de la cámara (foto/video). La acción deseada ("photo" o "video_toggle").
     private void sendHttpCaptureCommand(String action) {
         String filenameBase = editTextExpeditionName.getText().toString();
         String commandPath = "";
