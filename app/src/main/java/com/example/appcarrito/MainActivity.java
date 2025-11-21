@@ -36,12 +36,12 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton buttonForward, buttonBackward, buttonLeft, buttonRight, buttonStop;
     private ImageButton buttonCapturePhoto, buttonRecordVideo, buttonSettings;
     private SeekBar seekBarServo;
-    private TextView textViewStatus;
+    private TextView textViewStatus, textViewVideo;
     private WebView videoWebView;
 
     // 2. Variables de Red TCP/IP (Movimiento y Servo)
-    private String serverIP = "192.168.4.1";
-    private int serverPort = 8080;
+    private String serverIP = "10.102.191.71";
+    private int serverPort = 80;
 
     private final OkHttpClient httpClient = new OkHttpClient();
 
@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private ExecutorService executorService; // Hilo de fondo para operaciones de red
 
     // 3. Variables de HTTP (Captura de Cámara)
-    private int httpPort = 80;
+    private int httpPort = 81;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         videoWebView = findViewById(R.id.videoWebView);
         WebSettings webSettings = videoWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        textViewVideo = findViewById(R.id.textViewVideo);
         videoWebView.setWebViewClient(new WebViewClient());
 
         // Establecer un mensaje inicial de nombre de expedición
@@ -100,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
      //Configura los Listeners de eventos para los botones y SeekBar.
     private void setupListeners() {
+
         //Botón de Configuración de Conexión
         buttonSettings.setOnClickListener(v -> showConnectionDialog());
 
@@ -195,15 +197,17 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     updateStatus("Conexión TCP exitosa.");
                     Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
-
+                    textViewVideo.setText("");
                     // carga video del ESP32
                     String streamUrl = "http://" + serverIP + ":81/stream";
+                    System.out.println("URL del stream: " + streamUrl);
                     videoWebView.loadUrl(streamUrl);
                 });
 
             } catch (IOException e) {
                 Log.e("WIFI_CONTROL", "Error de conexión TCP: " + e.getMessage());
                 // Notificar error en el hilo principal
+                System.out.println("Error de conexión TCP: " + e.getMessage());
                 runOnUiThread(() -> {
                     updateStatus("ERROR: Conexión TCP fallida.");
                     Toast.makeText(MainActivity.this, "Error de Conexión: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -255,6 +259,7 @@ public class MainActivity extends AppCompatActivity {
                 Request request = new Request.Builder()
                         .url(fullUrl)
                         .build();
+
 
                 try (Response response = httpClient.newCall(request).execute()) {
                     Log.i("HTTP_CONTROL", "Respuesta: " + response.code());
