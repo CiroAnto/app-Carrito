@@ -3,11 +3,20 @@ package com.example.appcarrito;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.text.InputType;
 import android.util.Log; // ¡IMPORTANTE: Se asegura este import para usar Log!
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
@@ -52,24 +61,51 @@ public class MainActivity extends AppCompatActivity {
     // 3. Variables de HTTP (Captura de Cámara)
     private int httpPort = 81;
 
+    private Vibrator vibrator;
+
+    private void hacerVibrar(int duracionMs) {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                //para android 8 en adelante
+                vibrator.vibrate(VibrationEffect.createOneShot(duracionMs, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                //para versiones anteriores
+                vibrator.vibrate(duracionMs);
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            //para android 12 en adelante
+            VibratorManager vibratorManager = (VibratorManager) getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+            vibrator = vibratorManager.getDefaultVibrator();
+        } else {
+            //solo para versiones anteriores
+            vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        }
+
+        //verifica si tiene vibracion
+        if (vibrator == null || !vibrator.hasVibrator()) {
+            //por si no tiene vibes
+            return;
+        }
+
         // Inicializar el Executor (siempre debe ser inicializado)
         executorService = Executors.newSingleThreadExecutor();
 
-        // los componentes
+        //los componentes
         initUI();
 
         // Asignar Listeners a los botones y controles
         setupListeners();
     }
 
-    /**
-     * Inicializa todas las vistas del XML por su ID.
-     */
+     //Inicializa todas las vistas del XML por su ID.
     private void initUI() {
         // Controles Superiores
         editTextExpeditionName = findViewById(R.id.editTextExpeditionName);
@@ -81,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         buttonLeft = findViewById(R.id.buttonLeft);
         buttonRight = findViewById(R.id.buttonRight);
         buttonStop = findViewById(R.id.buttonStop);
+        buttonStop.setColorFilter(Color.RED);
 
         // Controles de Cámara
         seekBarServo = findViewById(R.id.seekBarServo);
@@ -103,14 +140,101 @@ public class MainActivity extends AppCompatActivity {
     private void setupListeners() {
 
         //Botón de Configuración de Conexión
-        buttonSettings.setOnClickListener(v -> showConnectionDialog());
+        //showConnectionDialog()
+        buttonSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showConnectionDialog();
+            }
+        });
 
         //Controles de Movimiento (Comandos TCP/IP)
-        buttonForward.setOnClickListener(v -> sendCommand("F"));
-        buttonBackward.setOnClickListener(v -> sendCommand("B"));
-        buttonLeft.setOnClickListener(v -> sendCommand("L"));
-        buttonRight.setOnClickListener(v -> sendCommand("R"));
-        buttonStop.setOnClickListener(v -> sendCommand("S"));
+        //sendCommand("F")
+        buttonForward.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    //se presiona el boton
+                    buttonForward.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
+                    //envia el comando de avanzar
+                    hacerVibrar(50);
+                    sendCommand("F");
+                } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
+                    //se deja de presionar el boton
+                    buttonForward.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    //comando para detener el carro
+                    sendCommand("S");
+                }
+                return true;
+            }
+        });
+        //sendCommand("B")
+        buttonBackward.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    //se presiona el boton y envia comando "atras"
+                    buttonBackward.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
+                    hacerVibrar(50);
+                    sendCommand("B");
+                } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
+                    //se deja de presionar el boton y evia comando stop
+                    buttonBackward.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    sendCommand("S");
+                }
+                return true;
+            }
+        });
+        //sendCommand("L")
+        buttonLeft.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    //se presiona el boton y envia comando hacia "izquierda"
+                    buttonLeft.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
+                    hacerVibrar(50);
+                    sendCommand("L");
+                } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
+                    //se deja de presionar el boton y detiene
+                    buttonLeft.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    sendCommand("S");
+                }
+                return true;
+            }
+        });
+        //sendCommand("R")
+        buttonRight.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    //se presiona el boton y envia comando hacia "derecha"
+                    buttonRight.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
+                    hacerVibrar(50);
+                    sendCommand("R");
+                } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
+                    //se deja de presionar el boton y detiene
+                    buttonRight.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    sendCommand("S");
+                }
+                return true;
+            }
+        });
+        //para detener el carro
+        buttonStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buttonStop.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                hacerVibrar(50);
+                sendCommand("S");
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Volver al color original (por ejemplo, blanco)
+                        buttonStop.setColorFilter(Color.RED, PorterDuff.Mode.SRC_IN);
+                    }
+                }, 500);
+            }
+        });
 
         //Controles de Cámara (Peticiones HTTP)
         buttonCapturePhoto.setOnClickListener(v -> sendHttpCaptureCommand("photo"));
@@ -196,6 +320,7 @@ public class MainActivity extends AppCompatActivity {
                 // Notificar éxito en el hilo principal
                 runOnUiThread(() -> {
                     updateStatus("Conexión TCP exitosa.");
+                    buttonSettings.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
                     Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
                     textViewVideo.setText("");
                     // carga video del ESP32
@@ -203,11 +328,10 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("URL del stream: " + streamUrl);
                     videoWebView.loadUrl(streamUrl);
                 });
-
             } catch (IOException e) {
                 Log.e("WIFI_CONTROL", "Error de conexión TCP: " + e.getMessage());
                 // Notificar error en el hilo principal
-                System.out.println("Error de conexión TCP: " + e.getMessage());
+                System.out.println("Error de conexión TCP: " + e.getMessage()); //ver error en consola
                 runOnUiThread(() -> {
                     updateStatus("ERROR: Conexión TCP fallida.");
                     Toast.makeText(MainActivity.this, "Error de Conexión: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -259,7 +383,6 @@ public class MainActivity extends AppCompatActivity {
                 Request request = new Request.Builder()
                         .url(fullUrl)
                         .build();
-
 
                 try (Response response = httpClient.newCall(request).execute()) {
                     Log.i("HTTP_CONTROL", "Respuesta: " + response.code());

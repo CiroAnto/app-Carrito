@@ -19,7 +19,7 @@
         android:layout_gravity="center"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
-        android:text="VIDEO :) (ESP32-CAM)" />
+        android:text="VIDEO : ) (ESP32-CAM)" />
 
     <!-- 2. CAPA SUPERPUESTA: CONTROLES Y HUD (RelativeLayout) -->
     <RelativeLayout
@@ -43,7 +43,7 @@
             android:maxLength="20"
             android:textSize="14sp"/>
 
-        <!-- B. SUPERIOR DERECHA: Botón para Abrir Configuración de Conexión -->
+        <!-- Botón para Abrir Configuración de Conexión -->
 
         <ImageButton
             android:id="@+id/buttonSettings"
@@ -58,7 +58,7 @@
             android:scaleType="fitCenter"
             android:src="@drawable/link" />
 
-        <!-- C. INFERIOR IZQUIERDA: Controles de Movimiento del Carrito -->
+        <!--Controles de movimiento del Carrito -->
         <LinearLayout
             android:id="@+id/layoutMovementControls"
             android:layout_width="wrap_content"
@@ -69,14 +69,6 @@
             android:orientation="vertical"
             android:padding="10dp">
 
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_gravity="center_horizontal"-->
-<!--                android:layout_marginBottom="4dp"-->
-<!--                android:text="MOVIMIENTO"-->
-<!--                android:textColor="#FFFFFF" />-->
-
             <ImageButton
                 android:id="@+id/buttonForward"
                 android:layout_width="55dp"
@@ -86,8 +78,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Tomar Foto"
                 android:padding="8dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/keyboard_arrow_up" />
+                android:src="@drawable/keyboard_arrow_up_60" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -103,8 +94,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Tomar Foto"
                     android:padding="8dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/keyboard_arrow_left_28dp" />
+                    android:src="@drawable/keyboard_arrow_left_60" />
 
 
                 <ImageButton
@@ -129,8 +119,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Tomar Foto"
                     android:padding="8dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/keyboard_arrow_right" />
+                    android:src="@drawable/keyboard_arrow_right_60" />
             </LinearLayout>
 
             <ImageButton
@@ -142,8 +131,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Tomar Foto"
                 android:padding="8dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/keyboard_arrow_down" />
+                android:src="@drawable/keyboard_arrow_down_60" />
 
         </LinearLayout>
         <!-- D. LADO DERECHO CENTRADO: Control de la Cámara y Captura -->
@@ -212,7 +200,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- E. INFERIOR DERECHA: Estatus de Conexión -->
+        <!--Estatus de Conexión -->
         <TextView
             android:id="@+id/textViewStatus"
             android:layout_width="wrap_content"
