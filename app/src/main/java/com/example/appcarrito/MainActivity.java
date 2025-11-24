@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.hardware.display.VirtualDisplay;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -19,6 +20,7 @@ import android.text.InputType;
 import android.util.Log; // ¡IMPORTANTE: Se asegura este import para usar Log!
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -39,6 +41,14 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.media.MediaRecorder;
+import android.net.Uri;
+import android.os.Environment;
 
 public class MainActivity extends AppCompatActivity {
     // 1. Variables de UI
@@ -63,6 +73,15 @@ public class MainActivity extends AppCompatActivity {
     private int httpPort = 81;
 
     private Vibrator vibrator;
+
+    //para video
+    private static final int SCREEN_RECORD_REQUEST_CODE = 1001;
+    private MediaProjectionManager projectionManager;
+    private MediaProjection mediaProjection;
+    private MediaRecorder mediaRecorder;
+    private boolean isRecording = false;
+    private String videoFilePath;
+
 
     private void hacerVibrar(int duracionMs) {
         if (vibrator != null && vibrator.hasVibrator()) {
@@ -104,6 +123,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Asignar Listeners a los botones y controles
         setupListeners();
+
+        //video
+        projectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
     }
 
      //Inicializa todas las vistas del XML por su ID.
@@ -252,7 +275,21 @@ public class MainActivity extends AppCompatActivity {
                 captureScreenshotFromStream();;
             }
         });
-        buttonRecordVideo.setOnClickListener(v -> sendHttpCaptureCommand("video_toggle"));
+
+        //startScreenRecording() -> alternativa para video
+        //sendHttpCaptureCommand("video_toggle") -> opcion uno para video
+        buttonRecordVideo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startScreenRecording();
+                if (isRecording) {
+                    buttonRecordVideo.setColorFilter(Color.RED);
+                } else {
+                    buttonRecordVideo.clearColorFilter();
+                }
+
+            }
+        });
 
         //Control de servo camara
         seekBarServo.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -446,6 +483,98 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("APP_CAPTURE", "Error al capturar la imagen: " + e.getMessage());
             Toast.makeText(this, "Error al capturar imagen", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    //metodos para grabar video video
+    private void setupMediaRecorder() throws IOException {
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+
+        // Carpeta y nombre del archivo
+        File folder = new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "Grabaciones");
+        if (!folder.exists()) folder.mkdirs();
+
+        videoFilePath = folder.getAbsolutePath() + "/video_" + System.currentTimeMillis() + ".mp4";
+        mediaRecorder.setOutputFile(videoFilePath);
+        mediaRecorder.setVideoSize(1280, 720);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        mediaRecorder.setVideoEncodingBitRate(5 * 1024 * 1024);
+        mediaRecorder.setVideoFrameRate(30);
+
+        mediaRecorder.prepare();
+    }
+
+    private void startScreenRecording() {
+        if (!isRecording) {
+            Intent captureIntent = projectionManager.createScreenCaptureIntent();
+            startActivityForResult(captureIntent, SCREEN_RECORD_REQUEST_CODE);
+        } else {
+            stopScreenRecording();
+        }
+    }
+
+    private void stopScreenRecording() {
+        try {
+            isRecording = false;
+            mediaRecorder.stop();
+            mediaRecorder.reset();
+            mediaProjection.stop();
+            Toast.makeText(this, "Grabación guardada en: " + videoFilePath, Toast.LENGTH_LONG).show();
+
+            // Opcional: abrir el video con el reproductor
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.parse(videoFilePath), "video/mp4");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+
+        } catch (Exception e) {
+            Log.e("VIDEO_REC", "Error al detener grabación: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SCREEN_RECORD_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                try {
+                    setupMediaRecorder();
+                    mediaProjection = projectionManager.getMediaProjection(resultCode, data);
+                    MediaProjection.Callback callback = new MediaProjection.Callback() {
+                        @Override
+                        public void onStop() {
+                            stopScreenRecording();
+                        }
+                    };
+                    mediaProjection.registerCallback(callback, null);
+
+                    // Crear la superficie de grabación
+                    Surface surface = mediaRecorder.getSurface();
+                    VirtualDisplay display = mediaProjection.createVirtualDisplay(
+                            "ScreenRecord",
+                            getResources().getDisplayMetrics().widthPixels,
+                            getResources().getDisplayMetrics().heightPixels,
+                            getResources().getDisplayMetrics().densityDpi,
+                            0,
+                            surface,
+                            null,
+                            null
+                    );
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    Toast.makeText(this, "Grabando video...", Toast.LENGTH_SHORT).show();
+
+                } catch (IOException e) {
+                    Log.e("VIDEO_REC", "Error al preparar grabación: " + e.getMessage());
+                }
+            } else {
+                Toast.makeText(this, "Permiso denegado para grabar pantalla", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
