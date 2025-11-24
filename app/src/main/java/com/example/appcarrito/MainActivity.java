@@ -5,10 +5,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -17,12 +19,9 @@ import android.text.InputType;
 import android.util.Log; // ¡IMPORTANTE: Se asegura este import para usar Log!
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +32,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -237,7 +238,20 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //Controles de Cámara (Peticiones HTTP)
-        buttonCapturePhoto.setOnClickListener(v -> sendHttpCaptureCommand("photo"));
+        //sendHttpCaptureCommand("photo")
+        buttonCapturePhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                buttonCapturePhoto.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        buttonCapturePhoto.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                    }
+                }, 500);
+                captureScreenshotFromStream();;
+            }
+        });
         buttonRecordVideo.setOnClickListener(v -> sendHttpCaptureCommand("video_toggle"));
 
         //Control de servo camara
@@ -410,4 +424,29 @@ public class MainActivity extends AppCompatActivity {
         }
         updateStatus("Recursos liberados.");
     }
+
+    //alternativa para la captura de fotos desde la app y no desde el ESP
+    private void captureScreenshotFromStream() {
+        try {
+            //crea el bitmap desde el WebView
+            videoWebView.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(videoWebView.getDrawingCache());
+            videoWebView.setDrawingCacheEnabled(false);
+
+            //guardar el bitmap en almacenamiento
+            String filename = editTextExpeditionName.getText().toString() + "foto_" + System.currentTimeMillis() + ".jpg";
+            File path = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), filename);
+            FileOutputStream out = new FileOutputStream(path);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+
+            Toast.makeText(this, "Foto guardada: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
+
+        } catch (Exception e) {
+            Log.e("APP_CAPTURE", "Error al capturar la imagen: " + e.getMessage());
+            Toast.makeText(this, "Error al capturar imagen", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
