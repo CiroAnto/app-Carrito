@@ -4,7 +4,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -16,7 +15,6 @@ import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
-import android.text.InputType;
 import android.util.Log; // ¡IMPORTANTE: Se asegura este import para usar Log!
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -48,7 +46,11 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.media.MediaRecorder;
 import android.net.Uri;
-import android.os.Environment;
+
+import android.content.ContentValues;
+import android.content.ContentResolver;
+import android.provider.MediaStore;
+import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
     // 1. Variables de UI
@@ -81,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
     private MediaRecorder mediaRecorder;
     private boolean isRecording = false;
     private String videoFilePath;
-
 
     private void hacerVibrar(int duracionMs) {
         if (vibrator != null && vibrator.hasVibrator()) {
@@ -155,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         textViewVideo = findViewById(R.id.textViewVideo);
         videoWebView.setWebViewClient(new WebViewClient());
+        videoWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null); //linea para el video, quitar si va mas lento
 
         // Establecer un mensaje inicial de nombre de expedición
         editTextExpeditionName.setText("Mision_01");
@@ -462,30 +464,63 @@ public class MainActivity extends AppCompatActivity {
         updateStatus("Recursos liberados.");
     }
 
-    //alternativa para la captura de fotos desde la app y no desde el ESP
     private void captureScreenshotFromStream() {
         try {
-            //crea el bitmap desde el WebView
+            // 1. Crear el bitmap desde el WebView
+            // Nota: getDrawingCache es obsoleto, pero si te funciona, lo dejamos así por ahora.
             videoWebView.setDrawingCacheEnabled(true);
             Bitmap bitmap = Bitmap.createBitmap(videoWebView.getDrawingCache());
             videoWebView.setDrawingCacheEnabled(false);
 
-            //guardar el bitmap en almacenamiento
-            String filename = editTextExpeditionName.getText().toString() + "foto_" + System.currentTimeMillis() + ".jpg";
-            File path = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), filename);
-            FileOutputStream out = new FileOutputStream(path);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
-            out.flush();
-            out.close();
+            if (bitmap == null) {
+                Toast.makeText(this, "Error: No se pudo crear el bitmap", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-            Toast.makeText(this, "Foto guardada: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            // 2. Definir el nombre y la carpeta personalizada
+            String folderName = "MisExpediciones"; // <--- TU CARPETA PERSONALIZADA
+            String filename = editTextExpeditionName.getText().toString() + "_foto_" + System.currentTimeMillis() + ".jpg";
+
+            OutputStream fos;
+            Uri imageUri = null;
+
+            // 3. Lógica para versiones recientes (Android 10 / API 29 en adelante)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver resolver = getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+                // Aquí defines la ruta específica dentro de Pictures
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + folderName);
+
+                imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                fos = resolver.openOutputStream(imageUri);
+            }
+            // 4. Lógica para versiones antiguas (Android 9 e inferiores)
+            else {
+                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+                File imageDir = new File(imagesDir, folderName);
+
+                if (!imageDir.exists()) {
+                    imageDir.mkdirs(); // Crea la carpeta si no existe
+                }
+
+                File image = new File(imageDir, filename);
+                fos = new FileOutputStream(image);
+            }
+
+            // 5. Guardar la imagen
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+            fos.close();
+
+            Toast.makeText(this, "Guardado en Imágenes/" + folderName, Toast.LENGTH_LONG).show();
 
         } catch (Exception e) {
-            Log.e("APP_CAPTURE", "Error al capturar la imagen: " + e.getMessage());
+            Log.e("APP_CAPTURE", "Error al guardar: " + e.getMessage());
             Toast.makeText(this, "Error al capturar imagen", Toast.LENGTH_SHORT).show();
         }
     }
-
     //metodos para grabar video video
     private void setupMediaRecorder() throws IOException {
         mediaRecorder = new MediaRecorder();
