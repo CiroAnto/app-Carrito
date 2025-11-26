@@ -28,6 +28,9 @@ import android.widget.Toast;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -67,8 +70,8 @@ public class MainActivity extends AppCompatActivity {
 
     private final OkHttpClient httpClient = new OkHttpClient();
 
-    private Socket tcpSocket;
-    private PrintWriter output;
+    private Socket tcpSocket;//a cambiar
+    private PrintWriter output;//a cambiar
     private ExecutorService executorService; // Hilo de fondo para operaciones de red
 
     // 3. Variables de HTTP (Captura de Cámara)
@@ -154,12 +157,13 @@ public class MainActivity extends AppCompatActivity {
         videoWebView = findViewById(R.id.videoWebView);
         WebSettings webSettings = videoWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setLoadWithOverviewMode(true);//cambio
         textViewVideo = findViewById(R.id.textViewVideo);
         videoWebView.setWebViewClient(new WebViewClient());
         videoWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null); //linea para el video, quitar si va mas lento
 
         // Establecer un mensaje inicial de nombre de expedición
-        editTextExpeditionName.setText("Mision_01");
+        editTextExpeditionName.setText("Expedición 1");
     }
 
      //Configura los Listeners de eventos para los botones y SeekBar.
@@ -184,12 +188,12 @@ public class MainActivity extends AppCompatActivity {
                     buttonForward.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
                     //envia el comando de avanzar
                     hacerVibrar(50);
-                    sendCommand("F");
+                    sendCommand("forward");
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
                     //se deja de presionar el boton
                     buttonForward.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                     //comando para detener el carro
-                    sendCommand("S");
+                    sendCommand("stop");
                 }
                 return true;
             }
@@ -202,11 +206,11 @@ public class MainActivity extends AppCompatActivity {
                     //se presiona el boton y envia comando "atras"
                     buttonBackward.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
                     hacerVibrar(50);
-                    sendCommand("B");
+                    sendCommand("backward");
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
                     //se deja de presionar el boton y evia comando stop
                     buttonBackward.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-                    sendCommand("S");
+                    sendCommand("stop");
                 }
                 return true;
             }
@@ -219,11 +223,11 @@ public class MainActivity extends AppCompatActivity {
                     //se presiona el boton y envia comando hacia "izquierda"
                     buttonLeft.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
                     hacerVibrar(50);
-                    sendCommand("L");
+                    sendCommand("left");
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
                     //se deja de presionar el boton y detiene
                     buttonLeft.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-                    sendCommand("S");
+                    sendCommand("stop");
                 }
                 return true;
             }
@@ -236,11 +240,11 @@ public class MainActivity extends AppCompatActivity {
                     //se presiona el boton y envia comando hacia "derecha"
                     buttonRight.setColorFilter(Color.YELLOW, PorterDuff.Mode.SRC_IN);
                     hacerVibrar(50);
-                    sendCommand("R");
+                    sendCommand("right");
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_UP || motionEvent.getAction() == MotionEvent.ACTION_CANCEL) {
                     //se deja de presionar el boton y detiene
                     buttonRight.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-                    sendCommand("S");
+                    sendCommand("stop");
                 }
                 return true;
             }
@@ -251,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 buttonStop.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                 hacerVibrar(50);
-                sendCommand("S");
+                sendCommand("stop");
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -289,7 +293,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     buttonRecordVideo.clearColorFilter();
                 }
-
             }
         });
 
@@ -345,7 +348,8 @@ public class MainActivity extends AppCompatActivity {
                             serverIP = ip;
                             serverPort = Integer.parseInt(portStr);
                             httpPort = Integer.parseInt(httpPortStr);
-                            connectToServer();
+                            //connectToServer();
+                            refreshStream();
                         } catch (NumberFormatException e) {
                             Toast.makeText(MainActivity.this, "Puerto(s) inválido(s)", Toast.LENGTH_SHORT).show();
                         }
@@ -358,57 +362,89 @@ public class MainActivity extends AppCompatActivity {
     }
 
      //Inicia el intento de conexión TCP en un hilo de fondo.
-    private void connectToServer() {
-        updateStatus("Intentando conectar a: " + serverIP + ":" + serverPort + "...");
-        executorService.execute(() -> {
-            try {
-                // Cerrar conexión previa si existe
-                if (tcpSocket != null && !tcpSocket.isClosed()) {
-                    tcpSocket.close();
-                }
-                // Intentar nueva conexión
-                tcpSocket = new Socket(serverIP, serverPort);
-                output = new PrintWriter(tcpSocket.getOutputStream());
+//    private void connectToServer() {
+//        updateStatus("Intentando conectar a: " + serverIP + ":" + serverPort + "...");
+//        executorService.execute(() -> {
+//            try {
+//                // Cerrar conexión previa si existe
+//                if (tcpSocket != null && !tcpSocket.isClosed()) {
+//                    tcpSocket.close();
+//                }
+//                // Intentar nueva conexión
+//                tcpSocket = new Socket(serverIP, serverPort);
+//                output = new PrintWriter(tcpSocket.getOutputStream());
+//
+//                // Notificar éxito en el hilo principal
+//                runOnUiThread(() -> {
+//                    updateStatus("Conexión TCP exitosa.");
+//                    buttonSettings.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
+//                    Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
+//                    textViewVideo.setText("");
+//                    // carga video del ESP32
+//                    String streamUrl = "http://" + serverIP + ":81/stream";
+//                    System.out.println("URL del stream: " + streamUrl);
+//                    videoWebView.loadUrl(streamUrl);
+//                });
+//            } catch (IOException e) {
+//                Log.e("WIFI_CONTROL", "Error de conexión TCP: " + e.getMessage());
+//                // Notificar error en el hilo principal
+//                System.out.println("Error de conexión TCP: " + e.getMessage()); //ver error en consola
+//                runOnUiThread(() -> {
+//                    updateStatus("ERROR: Conexión TCP fallida.");
+//                    Toast.makeText(MainActivity.this, "Error de Conexión: " + e.getMessage(), Toast.LENGTH_LONG).show();
+//                });
+//            }
+//        });
+//    }
 
-                // Notificar éxito en el hilo principal
-                runOnUiThread(() -> {
-                    updateStatus("Conexión TCP exitosa.");
-                    buttonSettings.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
-                    Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
-                    textViewVideo.setText("");
-                    // carga video del ESP32
-                    String streamUrl = "http://" + serverIP + ":81/stream";
-                    System.out.println("URL del stream: " + streamUrl);
-                    videoWebView.loadUrl(streamUrl);
-                });
-            } catch (IOException e) {
-                Log.e("WIFI_CONTROL", "Error de conexión TCP: " + e.getMessage());
-                // Notificar error en el hilo principal
-                System.out.println("Error de conexión TCP: " + e.getMessage()); //ver error en consola
-                runOnUiThread(() -> {
-                    updateStatus("ERROR: Conexión TCP fallida.");
-                    Toast.makeText(MainActivity.this, "Error de Conexión: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-            }
-        });
+    private void refreshStream() {
+        // En el ESP32 CameraWebServer, el stream suele estar en el puerto 81
+        String streamUrl = "http://" + serverIP + ":" + httpPort + "/stream";
+        Log.d("APP_VIDEO", "Cargando stream: " + streamUrl);
+        textViewVideo.setVisibility(View.GONE);
+        videoWebView.loadUrl(streamUrl);
+        updateStatus("Conectado a " + serverIP);
+        buttonSettings.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
     }
 
      //Envía un comando de texto al servidor TCP (ESP32), el comando a enviar (ej. "F", "S", "A90").
     private void sendCommand(final String command) {
-        if (output != null) {
-            executorService.execute(() -> {
-                try {
-                    output.write(command);
-                    output.flush();
-                    Log.d("WIFI_CONTROL", "Comando TCP enviado: " + command);
-                } catch (Exception e) {
-                    Log.e("WIFI_CONTROL", "Error al enviar comando TCP: " + e.getMessage());
-                    runOnUiThread(() -> updateStatus("Error de envío. ¿Desconectado?"));
+//        if (output != null) {
+//            executorService.execute(() -> {
+//                try {
+//                    output.write(command);
+//                    output.flush();
+//                    Log.d("WIFI_CONTROL", "Comando TCP enviado: " + command);
+//                } catch (Exception e) {
+//                    Log.e("WIFI_CONTROL", "Error al enviar comando TCP: " + e.getMessage());
+//                    runOnUiThread(() -> updateStatus("Error de envío. ¿Desconectado?"));
+//                }
+//            });
+//        } else {
+//            Toast.makeText(this, "Por favor, conecta primero.", Toast.LENGTH_SHORT).show();
+//        }
+        // Construimos la URL: http://ip:80/action?go=forward
+        String url = "http://" + serverIP + ":" + serverPort + "/action?go=" + command;
+
+        Request request = new Request.Builder().url(url).build();
+
+        // Ejecutamos la petición HTTP en segundo plano
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("HTTP_ERR", "Fallo al enviar comando: " + e.getMessage());
+                runOnUiThread(() -> updateStatus("Error enviando comando"));
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                // El ESP32 recibió el comando correctamente
+                if (response.isSuccessful()) {
+                    // Log.d("HTTP_OK", "Comando enviado: " + action);
                 }
-            });
-        } else {
-            Toast.makeText(this, "Por favor, conecta primero.", Toast.LENGTH_SHORT).show();
-        }
+                response.close();
+            }
+        });
     }
 
      //Actualiza el TextView de estado en el hilo principal.El mensaje de estado.
@@ -450,18 +486,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Cierra los recursos de red y el Executor
-        if (executorService != null) {
-            executorService.shutdownNow();
-        }
-        if (tcpSocket != null) {
-            try {
-                tcpSocket.close();
-            } catch (IOException e) {
-                // no hacer caso
-            }
-        }
-        updateStatus("Recursos liberados.");
+//        // Cierra los recursos de red y el Executor
+//        if (executorService != null) {
+//            executorService.shutdownNow();
+//        }
+//        if (tcpSocket != null) {
+//            try {
+//                tcpSocket.close();
+//            } catch (IOException e) {
+//                // no hacer caso
+//            }
+//        }
+//        updateStatus("Recursos liberados.");
+        executorService.shutdownNow();
     }
 
     private void captureScreenshotFromStream() {
