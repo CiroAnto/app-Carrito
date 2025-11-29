@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                         buttonCapturePhoto.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                     }
                 }, 500);
-                captureScreenshotFromStream();;
+                captureHighResPhoto();
             }
         });
 
@@ -361,42 +361,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-     //Inicia el intento de conexión TCP en un hilo de fondo.
-//    private void connectToServer() {
-//        updateStatus("Intentando conectar a: " + serverIP + ":" + serverPort + "...");
-//        executorService.execute(() -> {
-//            try {
-//                // Cerrar conexión previa si existe
-//                if (tcpSocket != null && !tcpSocket.isClosed()) {
-//                    tcpSocket.close();
-//                }
-//                // Intentar nueva conexión
-//                tcpSocket = new Socket(serverIP, serverPort);
-//                output = new PrintWriter(tcpSocket.getOutputStream());
-//
-//                // Notificar éxito en el hilo principal
-//                runOnUiThread(() -> {
-//                    updateStatus("Conexión TCP exitosa.");
-//                    buttonSettings.setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_IN);
-//                    Toast.makeText(MainActivity.this, "Conectado al Carrito!", Toast.LENGTH_SHORT).show();
-//                    textViewVideo.setText("");
-//                    // carga video del ESP32
-//                    String streamUrl = "http://" + serverIP + ":81/stream";
-//                    System.out.println("URL del stream: " + streamUrl);
-//                    videoWebView.loadUrl(streamUrl);
-//                });
-//            } catch (IOException e) {
-//                Log.e("WIFI_CONTROL", "Error de conexión TCP: " + e.getMessage());
-//                // Notificar error en el hilo principal
-//                System.out.println("Error de conexión TCP: " + e.getMessage()); //ver error en consola
-//                runOnUiThread(() -> {
-//                    updateStatus("ERROR: Conexión TCP fallida.");
-//                    Toast.makeText(MainActivity.this, "Error de Conexión: " + e.getMessage(), Toast.LENGTH_LONG).show();
-//                });
-//            }
-//        });
-//    }
-
     private void refreshStream() {
         // En el ESP32 CameraWebServer, el stream suele estar en el puerto 81
         String streamUrl = "http://" + serverIP + ":" + httpPort + "/stream";
@@ -409,20 +373,6 @@ public class MainActivity extends AppCompatActivity {
 
      //Envía un comando de texto al servidor TCP (ESP32), el comando a enviar (ej. "F", "S", "A90").
     private void sendCommand(final String command) {
-//        if (output != null) {
-//            executorService.execute(() -> {
-//                try {
-//                    output.write(command);
-//                    output.flush();
-//                    Log.d("WIFI_CONTROL", "Comando TCP enviado: " + command);
-//                } catch (Exception e) {
-//                    Log.e("WIFI_CONTROL", "Error al enviar comando TCP: " + e.getMessage());
-//                    runOnUiThread(() -> updateStatus("Error de envío. ¿Desconectado?"));
-//                }
-//            });
-//        } else {
-//            Toast.makeText(this, "Por favor, conecta primero.", Toast.LENGTH_SHORT).show();
-//        }
         // Construimos la URL: http://ip:80/action?go=forward
         String url = "http://" + serverIP + ":" + serverPort + "/action?go=" + command;
 
@@ -486,18 +436,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        // Cierra los recursos de red y el Executor
-//        if (executorService != null) {
-//            executorService.shutdownNow();
-//        }
-//        if (tcpSocket != null) {
-//            try {
-//                tcpSocket.close();
-//            } catch (IOException e) {
-//                // no hacer caso
-//            }
-//        }
-//        updateStatus("Recursos liberados.");
         executorService.shutdownNow();
     }
 
@@ -650,4 +588,80 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //para tomar una captura de la foto desde el ESP32 y en HD
+    private void captureHighResPhoto() {
+        // 1. URL del endpoint de captura (Suele ser el puerto 80 o el 81 dependiendo de tu config)
+        // En el ejemplo estándar de CameraWebServer, /capture suele estar en el puerto 80 (control),
+        // pero a veces en el 81. Prueba con 'serverPort' (80) primero.
+        String url = "http://" + serverIP + ":" + serverPort + "/capture";
+
+        updateStatus("Solicitando foto HD...");
+        Toast.makeText(this, "Capturando foto HD...", Toast.LENGTH_SHORT).show();
+
+        Request request = new Request.Builder().url(url).build();
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("FOTO_HD", "Error al descargar foto: " + e.getMessage());
+                runOnUiThread(() -> {
+                    updateStatus("Error al capturar foto");
+                    Toast.makeText(MainActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    runOnUiThread(() -> updateStatus("Error del servidor: " + response.code()));
+                    return;
+                }
+                // 2. Obtenemos los bytes de la imagen
+                try (java.io.InputStream inputStream = response.body().byteStream()) {
+                    // Convertimos el stream a Bitmap
+                    final Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(inputStream);
+
+                    if (bitmap != null) {
+                        // 3. Guardamos el Bitmap en el teléfono (usando tu lógica anterior)
+                        saveBitmapToGallery(bitmap);
+                    }
+                } catch (Exception e) {
+                    Log.e("FOTO_HD", "Error procesando imagen: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    // Función auxiliar para guardar (Separada para mayor orden)
+    private void saveBitmapToGallery(Bitmap bitmap) {
+        String folderName = "MisExpediciones";
+        String filename = editTextExpeditionName.getText().toString() + "_HD_" + System.currentTimeMillis() + ".jpg";
+
+        try {
+            OutputStream fos;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver resolver = getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + folderName);
+                fos = resolver.openOutputStream(resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues));
+            } else {
+                File imageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), folderName);
+                if (!imageDir.exists()) imageDir.mkdirs();
+                fos = new FileOutputStream(new File(imageDir, filename));
+            }
+
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos); // Calidad 100
+            fos.close();
+
+            runOnUiThread(() -> {
+                //updateStatus("Foto Guardada");
+                Toast.makeText(MainActivity.this, "¡Foto Guardada en!", Toast.LENGTH_LONG).show();
+            });
+
+        } catch (Exception e) {
+            Log.e("SAVE_IMG", "Error al guardar: " + e.getMessage());
+        }
+    }
 }
